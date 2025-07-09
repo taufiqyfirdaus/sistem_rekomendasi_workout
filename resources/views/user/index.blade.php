@@ -327,7 +327,7 @@
                                                 Pas
                                             </label>
 
-                                            <input type="radio" class="btn-check" name="feedback" id="feedbackRingan" value="1" required>
+                                            <input type="radio" class="btn-check" name="feedback" id="feedbackRingan" value="-1" required>
                                             <label class="btn btn-warning flex-fill d-flex justify-content-center align-items-center text-dark py-3" for="feedbackRingan">
                                                 Terlalu Ringan
                                             </label>
@@ -409,6 +409,7 @@
                                 'Fokus pada teknik yang benar untuk mencegah cedera.',
                                 'Nyeri otot setelah pertama kali berolahraga adalah hal yang wajar — tubuhmu sedang beradaptasi.',
                                 'Jika tujuanmu menurunkan berat badan, cobalah menjaga pola makan dengan defisit kalori yang sehat.',
+                                'Berikanlah waktu istirahat setiap minggunya paling tidak 1 atau 2 hari untuk membantu memulihkan diri dari kelelahan, memperbaiki jaringan yang rusak, dan mencegah cedera.',
                             ];
                             $randomTip = $randomTip ?? $tips[array_rand($tips)];
                         @endphp
@@ -532,14 +533,23 @@
     <script>
         // Saat modal feedback muncul, isi tanggal lokal
         $('#modalFeedback').on('shown.bs.modal', function() {
-            const localDate = new Date().toISOString().slice(0, 10); // format: YYYY-MM-DD
+            // const localDate = new Date().toISOString().slice(0, 10);
+            const d = new Date();
+            const localDate = d.getFullYear() + '-' +
+                String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                String(d.getDate()).padStart(2, '0');
+
             document.getElementById('local_date').value = localDate;
         });
     </script>
     <script>
         function highlightToday() {
-            const today = new Date().toISOString().slice(0, 10);
-            const todayCell = document.querySelector('td[data-date="' + today + '"]');
+            const today = new Date();
+            const localDate = today.getFullYear() + '-' +
+                String(today.getMonth() + 1).padStart(2, '0') + '-' +
+                String(today.getDate()).padStart(2, '0');
+
+            const todayCell = document.querySelector(`td[data-date="${localDate}"]`);
             if (todayCell && !todayCell.classList.contains('bg-success')) {
                 todayCell.classList.add('bg-secondary-subtle', 'fw-bold');
             }

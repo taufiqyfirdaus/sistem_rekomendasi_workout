@@ -13,13 +13,12 @@ def get_db_connection():
         password=os.getenv("DB_PASSWORD", ""),
         database=os.getenv("DB_NAME", "fitq"),
     )
-
 # Mengambil 5 workout terakhir dari histories agar tdk merekomendasikan wo yg sama
 def get_recent_recommended_workouts(user_id: int, limit: int = 5) -> set:
     db = get_db_connection()
     cursor = db.cursor()
     cursor.execute("""
-        SELECT workout_id FROM histories
+        SELECT DISTINCT workout_id FROM histories
         WHERE user_id = %s
         ORDER BY tanggal DESC, id DESC
         LIMIT %s
@@ -28,13 +27,11 @@ def get_recent_recommended_workouts(user_id: int, limit: int = 5) -> set:
     cursor.close()
     db.close()
     return set(row[0] for row in rows)
-
 # Filter untuk mood
 def filter_by_mood(workouts, mood):
     if mood == "Buruk":
         return [w for w in workouts if w["tingkat_kesulitan"] == "Pemula"]
     return workouts
-
 # Filter untuk kondisi kesehatan
 def filter_by_kesehatan(workouts, kondisi_kesehatan):
     allowed_map = {
@@ -44,14 +41,13 @@ def filter_by_kesehatan(workouts, kondisi_kesehatan):
         "Diabetes": ["Jalan santai", "Bersepeda", "Yoga", "Bersepeda Statis", "Tai Chi", "Push-up", "Sit-up", "Squat"],
         "Obesitas": ["Jalan santai", "Bersepeda", "Yoga", "Bersepeda Statis", "Tai Chi", "Aerobik", "Push-up", "Sit-up", "Squat", "Latihan Dumbell"],
         "Penyakit Jantung": ["Jalan santai", "Bersepeda", "Yoga", "Bersepeda Statis", "Tai Chi", "Aerobik", "Stretching"],
-        "Asma": ["Jalan santai", "Bersepeda", "Yoga", "Bersepeda Statis", "Tai Chi"],
+        "Asma": ["Jalan santai", "Bersepeda", "Yoga", "Bersepeda Statis", "Tai Chi", "Aerobik"],
         "Normal": None
     }
     allowed = allowed_map.get(kondisi_kesehatan)
     if not allowed:
         return workouts
     return [w for w in workouts if any(nama.lower() in w["nama_workout"].lower() for nama in allowed)]
-
 # Filter untuk kelengkapan alat
 def filter_by_alat(workouts, preferensi_alat):
     allowed_map = {
@@ -63,7 +59,6 @@ def filter_by_alat(workouts, preferensi_alat):
     if not allowed:
         return workouts
     return [w for w in workouts if any(alat.strip().lower() == w["alat"].strip().lower() for alat in allowed)]
-
 # Mengidentifikasi state yang akan digunakan
 def get_state_identifier(state: dict):
     return (
@@ -77,7 +72,6 @@ def get_state_identifier(state: dict):
         state["durasi_latihan"],
         state["kelengkapan_alat"],
     )
-
 # Jika state belum ada maka akan membuat 42 data Q-Table
 def generate_q_table_entries_if_missing(state):
     db = get_db_connection()
@@ -110,6 +104,24 @@ def generate_q_table_entries_if_missing(state):
     db.commit()
     cursor.close()
     db.close()
+# Proses untuk menurunkan epsilon seiring banyaknya rekomendasi
+def calculate_epsilon(user_id):
+    db = get_db_connection()
+    cursor = db.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM histories WHERE user_id = %s", (user_id,))
+    episode = cursor.fetchone()[0]
+
+    cursor.close()
+    db.close()
+
+    # Parameter epsilon decay
+    epsilon_initial = 1.0
+    min_epsilon = 0.1
+    decay_rate = 0.97
+
+    epsilon = max(min_epsilon, epsilon_initial * (decay_rate ** episode))
+    return epsilon
 
 # Proses rekomendasi mulai dari mengambil state hingga mengirimkan rekomendasi ke laravel
 def get_rekomendasi(state, user_id):
@@ -139,23 +151,42 @@ def get_rekomendasi(state, user_id):
     cursor.close()
     db.close()
 
-    mood = state.get("mood", "Bagus")
+    # hasil = filter_by_mood(hasil, state["mood"])
+    mood = state.get("mood", "Bagus")  
     hasil = filter_by_mood(hasil, mood)
+    print(f"Jumlah setelah filter mood: {len(hasil)}")
     hasil = filter_by_kesehatan(hasil, state["kondisi_kesehatan"])
+    print(f"Jumlah setelah filter kesehatan: {len(hasil)}")
+    # Simpan hasil sementara sebelum filter alat
+    hasil_sebelum_alat = hasil.copy()
+
     hasil = filter_by_alat(hasil, state["kelengkapan_alat"])
+    print(f"Jumlah setelah filter alat: {len(hasil)}")
+
+    if not hasil:
+        print("Filter alat terlalu ketat, gunakan hasil tanpa filter alat.")
+        hasil = hasil_sebelum_alat
+        print(f"Jumlah workout setelah longgar: {len(hasil)}")
 
     # Ambil workout terakhir dari history (maks 5)
     recently_used_ids = get_recent_recommended_workouts(user_id)
 
     # Filter hasil agar tidak menyertakan workout_id yang sama
-    hasil = [w for w in hasil if w["workout_id"] not in recently_used_ids]
+    if len(hasil) > 3:
+        hasil = [w for w in hasil if w["workout_id"] not in recently_used_ids]
+        print(f"Jumlah setelah filter workout terakhir: {len(hasil)}")
+    else:
+        print("Jumlah hasil terlalu sedikit, skip filter workout terakhir.")
 
     if not hasil:
-        print("Semua workout pernah direkomendasikan dalam 5 kali terakhir. Gunakan default.")
-        return 1
+        print("Semua workout terfilter. Gunakan fallback workout_id=1.")
+        return 1, "explore"
 
     # EPSILON GREEDY untuk algoritma memilih antara explore atau exploit
-    epsilon = 0.2
+    epsilon = calculate_epsilon(user_id)
+
+    print(f"Epsilon saat ini: {epsilon:.4f}")
+
     if random.random() < epsilon:
         rekomendasi = random.choice(hasil)
         strategi = "explore"
@@ -167,7 +198,6 @@ def get_rekomendasi(state, user_id):
         print(f"Eksploitasi: pilih workout_id = {rekomendasi['workout_id']}")
 
     return rekomendasi["workout_id"], strategi
-
 # Proses update q-value yang ada di Q-Table
 def update_q_value(state: dict, workout_id: int, reward: int):
     db = get_db_connection()
@@ -190,7 +220,6 @@ def update_q_value(state: dict, workout_id: int, reward: int):
 
     if result:
         id_, old_q = result
-        # Perhitungan Q-Learning
         new_q = old_q + alpha * (reward - old_q)
         cursor.execute("UPDATE q_learning_states SET q_value = %s WHERE id = %s", (new_q, id_))
     else:

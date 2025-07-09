@@ -36,7 +36,7 @@
                                     <td>
                                         @if ($history->feedback === 2)
                                             Pas
-                                        @elseif ($history->feedback === 1)
+                                        @elseif ($history->feedback === -1)
                                             Terlalu Ringan
                                         @elseif ($history->feedback === -2)
                                             Terlalu Berat

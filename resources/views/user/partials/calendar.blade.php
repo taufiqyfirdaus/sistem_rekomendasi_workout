@@ -57,14 +57,13 @@
                         $isCurrentMonth = $day->month == $currentMonth->month;
                         $isDone = isset($progress[$dateString]) && $progress[$dateString];
                     @endphp
-                    <td data-date="{{ $dateString }}" 
-                        class="{{ !$isCurrentMonth ? 'text-muted' : '' }}
-                                {{ $isDone ? 'bg-success text-white' : '' }}">
-                        <span class="{{ $isDone && $dateString == now()->toDateString() ? 'fw-bold' : ($isDone ? 'fw-normal' : '') }}">
+                    <td data-date="{{ $dateString }}" class="{{ !$isCurrentMonth ? 'text-muted' : '' }}
+           {{ $isDone ? 'bg-success text-white' : '' }}">
+                        <span>
                             {{ $day->day }}
                         </span>
-                        {{-- {{ $day->day }} --}}
                     </td>
+
                     @php $day->addDay(); @endphp
                 @endfor
             </tr>
