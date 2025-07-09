@@ -21,10 +21,9 @@ class DatabaseSeeder extends Seeder
         //     'email' => 'test@example.com',
         // ]);
         $this->call([
-            // UserSeeder::class,
-            // WorkoutSeeder::class,
-            // RoleSeeder::class,
-            QLearningSeeder::class,
+            UserSeeder::class,
+            WorkoutSeeder::class,
+            RoleSeeder::class,
         ]);
     }
 }
