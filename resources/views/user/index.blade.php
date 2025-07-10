@@ -90,7 +90,7 @@
                                             <label class="form-label mb-0 fw-semibold">Tanggal Lahir</label>
                                             <div class="form-text text-muted mt-0 mb-1" style="font-size: 10px;"><i class="bi bi-info-circle"> Tanggal lahir digunakan untuk menghitung usia Anda</i></div>
                                             <input type="date" class="form-control" name="tanggal_lahir" id="tanggal_lahir" value="{{ old('tanggal_lahir', $kondisi?->tanggal_lahir) }}"
-                                                placeholder="Masukkan tanggal lahir">
+                                                placeholder="Masukkan tanggal lahir" required>
                                         </div>
 
                                         <div class="mb-3">
@@ -103,7 +103,7 @@
                                             <label class="form-label mb-0 fw-semibold">Berat Badan (kg)</label>
                                             <div class="form-text text-muted mt-0 mb-1" style="font-size: 10px;"><i class="bi bi-info-circle"> Masukkan berat Anda saat ini dalam satuan kilogram</i></div>
                                             <input type="number" step="any" class="form-control" name="berat" id="berat" value="{{ old('berat', $kondisi?->berat) }}"
-                                                placeholder="Masukkan berat badan">
+                                                placeholder="Masukkan berat badan" required>
                                         </div>
 
                                         <div class="mb-3">
@@ -111,7 +111,7 @@
                                             <div class="form-text text-muted mt-0 mb-1" style="font-size: 10px;"><i class="bi bi-info-circle"> Masukkan tinggi Anda saat ini dalam satuan centimeter</i>
                                             </div>
                                             <input type="number" step="any" class="form-control" name="tinggi" id="tinggi" value="{{ old('tinggi', $kondisi?->tinggi) }}"
-                                                placeholder="Masukkan tinggi badan">
+                                                placeholder="Masukkan tinggi badan" required>
                                         </div>
 
                                         <div class="mb-3">
@@ -131,7 +131,7 @@
                                         <div class="mb-3">
                                             <label class="form-label mb-0 fw-semibold">Kondisi Kesehatan</label>
                                             <div class="form-text text-muted mt-0 mb-1" style="font-size: 10px;"><i class="bi bi-info-circle"> Kondisi kesehatan yang Anda rasakan saat ini</i></div>
-                                            <select class="form-select" name="kondisi_kesehatan">
+                                            <select class="form-select" name="kondisi_kesehatan" required>
                                                 <option disabled selected>Pilih Kondisi Kesehatan</option>
                                                 @foreach (['Normal', 'Cedera', 'Hipertensi', 'Hipotensi', 'Diabetes', 'Obesitas', 'Penyakit Jantung', 'Asma'] as $kesehatan)
                                                     <option value="{{ $kesehatan }}" {{ old('kondisi_kesehatan', $kondisi?->kondisi_kesehatan) === $kesehatan ? 'selected' : '' }}>
@@ -145,7 +145,7 @@
                                             <label class="form-label mb-0 fw-semibold">Tingkat Kebugaran</label>
                                             <div class="form-text text-muted mt-0 mb-1" style="font-size: 10px;"><i class="bi bi-info-circle"> Perkiraan intensitas aktivitas fisik sehari-hari Anda</i>
                                             </div>
-                                            <select class="form-select" name="tingkat_kebugaran">
+                                            <select class="form-select" name="tingkat_kebugaran" required>
                                                 <option disabled selected>Pilih Tingkat Kebugaran</option>
                                                 @foreach (['Rendah', 'Sedang', 'Tinggi'] as $tingkat)
                                                     <option value="{{ $tingkat }}" {{ old('tingkat_kebugaran', $kondisi?->tingkat_kebugaran) === $tingkat ? 'selected' : '' }}>
@@ -186,7 +186,7 @@
                                                     <br><b>- Kekuatan :</b> Latihan dumbbell, Latihan Beban dan lain-lain
                                                 </i>
                                             </div>
-                                            <select class="form-select" name="jenis_olahraga_favorit">
+                                            <select class="form-select" name="jenis_olahraga_favorit" required>
                                                 <option disabled selected>Pilih Jenis Olahraga Favorit</option>
                                                 @foreach (['Kardio', 'Bodyweight Training', 'Fleksibilitas', 'Dance Fitness', 'HIIT', 'Kekuatan'] as $jenis)
                                                     <option value="{{ $jenis }}" {{ old('jenis_olahraga_favorit', $preferensi?->jenis_olahraga_favorit) === $jenis ? 'selected' : '' }}>
@@ -198,7 +198,7 @@
                                         <div class="mb-3">
                                             <label class="form-label mb-0 fw-semibold">Tujuan Melakukan Workout</label>
                                             <div class="form-text text-muted mt-0 mb-1" style="font-size: 10px;"><i class="bi bi-info-circle"> Tujuan utama Anda dalam melakukan workout</i></div>
-                                            <select class="form-select" name="tujuan_workout">
+                                            <select class="form-select" name="tujuan_workout" required>
                                                 <option disabled selected>Pilih Tujuan Melakukan Workout</option>
                                                 @foreach (['Menurunkan Berat Badan', 'Meningkatkan Massa Otot & Kekuatan', 'Meningkatkan Kebugaran Kardiovaskular', 'Meningkatkan Fleksibilitas', 'Relaksasi'] as $tujuan)
                                                     <option value="{{ $tujuan }}" {{ old('tujuan_workout', $preferensi?->tujuan_workout) === $tujuan ? 'selected' : '' }}>{{ $tujuan }}
@@ -210,7 +210,8 @@
                                         <div class="mb-3">
                                             <label class="form-label mb-0 fw-semibold">Durasi Latihan (menit)</label>
                                             <div class="form-text text-muted mt-0 mb-1" style="font-size: 10px;"><i class="bi bi-info-circle"> Waktu yang Anda siapkan untuk melakukan workout</i></div>
-                                            <input type="number" class="form-control" name="durasi" value="{{ old('durasi', $preferensi?->durasi) }}" placeholder="Masukkan durasi latihan">
+                                            <input type="number" class="form-control" name="durasi" value="{{ old('durasi', $preferensi?->durasi) }}" placeholder="Masukkan durasi latihan"
+                                                required>
                                         </div>
 
                                         <div class="mb-3">
@@ -222,7 +223,7 @@
                                                     <br><b>- Lengkap :</b> Peralatan dasar + peralatan lain seperti dumbbell, barbell, dan sepeda statis
                                                 </i>
                                             </div>
-                                            <select class="form-select" name="alat">
+                                            <select class="form-select" name="alat" required>
                                                 <option disabled selected>Pilih Kelengkapan Alat</option>
                                                 @foreach (['Tidak ada', 'Dasar', 'Lengkap'] as $alat)
                                                     <option value="{{ $alat }}" {{ old('alat', $preferensi?->alat) === $alat ? 'selected' : '' }}>{{ $alat }}</option>
@@ -399,12 +400,12 @@
                     @auth
                         @php
                             $tips = [
-                                'Jangan lupa melakukan pemanasan serta pendinginan sebelum dan setelah workout.',
+                                'Jangan lupa melakukan pemanasan sebelum workout serta pendinginan setelah workout.',
                                 'Pastikan kamu cukup minum air sebelum, saat, dan setelah berolahraga.',
                                 'Makan makanan bergizi seimbang untuk mendukung performa latihan.',
                                 'Tidur yang cukup membantu proses pemulihan tubuh setelah workout.',
                                 'Lakukan olahraga sesuai dengan kemampuan dan kondisi tubuhmu.',
-                                'Gunakan pakaian dan sepatu yang nyaman saat berolahraga.',
+                                'Gunakan pakaian yang nyaman saat berolahraga.',
                                 'Jangan paksakan diri jika merasa lelah atau tidak enak badan.',
                                 'Fokus pada teknik yang benar untuk mencegah cedera.',
                                 'Nyeri otot setelah pertama kali berolahraga adalah hal yang wajar — tubuhmu sedang beradaptasi.',
@@ -417,7 +418,7 @@
                         <div class="bg-white rounded shadow p-3">
                             <h5><i class="bi bi-info-circle"></i> Tips</h5>
                             <hr class="my-2" style="border-top: 3px solid #868686;">
-                            <p class="text-muted">{{ $randomTip ?? 'Belum ada tips saat ini.' }}</p>
+                            <p class="text-muted mt-3">{{ $randomTip ?? 'Belum ada tips saat ini.' }}</p>
                         </div>
                     @endauth
                     @guest
