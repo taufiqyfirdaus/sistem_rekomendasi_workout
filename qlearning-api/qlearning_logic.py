@@ -199,29 +199,42 @@ def get_rekomendasi(state, user_id):
 
     return rekomendasi["workout_id"], strategi
 # Proses update q-value yang ada di Q-Table
-def update_q_value(state: dict, workout_id: int, reward: int):
+def update_q_value(state: dict, workout_id: int, reward: int, next_state: dict):
+    alpha = 0.1
+    gamma = 0.8
+
     db = get_db_connection()
     cursor = db.cursor()
 
-    state_values = get_state_identifier(state)
+    current_state_values = get_state_identifier(state)
+    next_state_values = get_state_identifier(next_state)
 
-    select_query = """
+    # Q(s, a)
+    cursor.execute("""
         SELECT id, q_value FROM q_learning_states
         WHERE usia = %s AND jenis_kelamin = %s AND kategori_bmi = %s
         AND kondisi_kesehatan = %s AND tingkat_kebugaran = %s
         AND jenis_olahraga_favorit = %s AND tujuan_workout = %s
         AND durasi_latihan = %s AND kelengkapan_alat = %s
         AND workout_id = %s
-    """
-    cursor.execute(select_query, state_values + (workout_id,))
+    """, current_state_values + (workout_id,))
     result = cursor.fetchone()
 
-    alpha = 0.1  # learning rate
+    # max Q(s’, a’)
+    cursor.execute("""
+        SELECT MAX(q_value) FROM q_learning_states
+        WHERE usia = %s AND jenis_kelamin = %s AND kategori_bmi = %s
+        AND kondisi_kesehatan = %s AND tingkat_kebugaran = %s
+        AND jenis_olahraga_favorit = %s AND tujuan_workout = %s
+        AND durasi_latihan = %s AND kelengkapan_alat = %s
+    """, next_state_values)
+    max_q_next = cursor.fetchone()[0] or 0.0
 
     if result:
         id_, old_q = result
-        new_q = old_q + alpha * (reward - old_q)
+        new_q = old_q + alpha * (reward + gamma * max_q_next - old_q)
         cursor.execute("UPDATE q_learning_states SET q_value = %s WHERE id = %s", (new_q, id_))
+        print(f"Q(s,a) = {old_q} + {alpha} * ({reward} + {gamma} * {max_q_next} - {old_q}) = {new_q}")
     else:
         cursor.execute("""
             INSERT INTO q_learning_states (
@@ -229,10 +242,9 @@ def update_q_value(state: dict, workout_id: int, reward: int):
                 jenis_olahraga_favorit, tujuan_workout, durasi_latihan, kelengkapan_alat,
                 workout_id, q_value
             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, state_values + (workout_id, reward))
+        """, current_state_values + (workout_id, reward))
 
     db.commit()
     cursor.close()
     db.close()
-
     return True

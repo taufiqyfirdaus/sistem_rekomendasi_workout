@@ -157,10 +157,23 @@ class QLearningController extends Controller
             'mood' => session('last_mood') ?? 'Bagus',
         ];
 
+        $nextState = [
+            'usia' => $kategoriUsia,
+            'jenis_kelamin' => $user->jenis_kelamin === 'Laki-laki' ? 'Pria' : 'Wanita',
+            'kategori_bmi' => $kategoriBmi,
+            'kondisi_kesehatan' => $kondisi->kondisi_kesehatan,
+            'tingkat_kebugaran' => $kondisi->tingkat_kebugaran,
+            'jenis_olahraga_favorit' => $preferensi->jenis_olahraga_favorit,
+            'tujuan_workout' => $preferensi->tujuan_workout,
+            'durasi_latihan' => $preferensi->durasi,
+            'kelengkapan_alat' => $preferensi->alat,
+        ];
+
         $data = [
             'state' => $state,
             'workout_id' => (int) $request->workout_id,
-            'feedback' => (int) $request->feedback
+            'feedback' => (int) $request->feedback,
+            'next_state' => $nextState
         ];
 
         Log::debug('Payload feedback ke Python:', $data);
@@ -169,7 +182,18 @@ class QLearningController extends Controller
             $response = Http::timeout(10)->post('http://127.0.0.1:8001/feedback', $data);
 
             if ($response->successful()) {
-                $berhasil = $this->simpanFeedbackKeHistory($user->id, $request->workout_id, $request->feedback);
+                $berhasil = false;
+                $historyId = session('last_history_id');
+                if ($historyId) {
+                    $history = History::find($historyId);
+                    if ($history) {
+                        $history->update([
+                            'feedback' => $request->feedback,
+                            'next_state' => json_encode($nextState, JSON_PRETTY_PRINT),
+                        ]);
+                        $berhasil = true;
+                    }
+                }
                 if (!$berhasil) {
                     Log::warning("Feedback berhasil dikirim ke Python, tapi gagal disimpan di tabel histories.");
                 }
@@ -197,30 +221,30 @@ class QLearningController extends Controller
     }
 
     
-    private function simpanFeedbackKeHistory($userId, $workoutId, $feedback)
-    {
-        $historyId = session('last_history_id');
+    // private function simpanFeedbackKeHistory($userId, $workoutId, $feedback)
+    // {
+    //     $historyId = session('last_history_id');
 
-        if ($historyId) {
-            $history = History::find($historyId);
-            if ($history) {
-                $history->update(['feedback' => $feedback]);
-                return true;
-            } else {
-                Log::warning("History dengan ID $historyId tidak ditemukan saat update feedback.");
-            }
-        } else {
-            Log::info("Session 'last_history_id' tidak tersedia. Menggunakan fallback by user/workout/tanggal.");
-        }
+    //     if ($historyId) {
+    //         $history = History::find($historyId);
+    //         if ($history) {
+    //             $history->update(['feedback' => $feedback]);
+    //             return true;
+    //         } else {
+    //             Log::warning("History dengan ID $historyId tidak ditemukan saat update feedback.");
+    //         }
+    //     } else {
+    //         Log::info("Session 'last_history_id' tidak tersedia. Menggunakan fallback by user/workout/tanggal.");
+    //     }
 
-        // Fallback: cari berdasarkan user, workout, dan tanggal
-        return History::where([
-            'user_id' => $userId,
-            'workout_id' => $workoutId,
-            'tanggal' => now()->toDateString(),
-        ])->latest()->first()?->update([
-            'feedback' => $feedback
-        ]);
-    }
+    //     // Fallback: cari berdasarkan user, workout, dan tanggal
+    //     return History::where([
+    //         'user_id' => $userId,
+    //         'workout_id' => $workoutId,
+    //         'tanggal' => now()->toDateString(),
+    //     ])->latest()->first()?->update([
+    //         'feedback' => $feedback
+    //     ]);
+    // }
 
 }

@@ -10,7 +10,7 @@ class History extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'workout_id', 'tanggal','state_snapshot', 'mood', 'strategi', 'feedback',
+        'user_id', 'workout_id', 'tanggal','state_snapshot', 'mood', 'strategi', 'feedback', 'next_state'
     ];
 
     public function user()

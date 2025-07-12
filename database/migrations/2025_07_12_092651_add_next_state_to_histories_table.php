@@ -9,20 +9,19 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up()
+    public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('foto_profil')->nullable();
+        Schema::table('histories', function (Blueprint $table) {
+            $table->json('next_state')->nullable()->after('feedback'); // Untuk menyimpan s'
         });
     }
-
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
+        Schema::table('histories', function (Blueprint $table) {
             //
         });
     }
