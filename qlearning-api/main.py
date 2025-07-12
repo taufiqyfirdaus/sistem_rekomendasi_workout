@@ -1,10 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from typing import Optional
 from qlearning_logic import get_rekomendasi, update_q_value
-
 # Inisialisasi FastAPI
 app = FastAPI()
-
 # Mendefinisikan struktur data state
 class UserState(BaseModel):
     usia: str
@@ -18,13 +17,12 @@ class UserState(BaseModel):
     kelengkapan_alat: str
     mood: str
     user_id: int
-
 # Menerima data saat diberikan feedback
 class FeedbackInput(BaseModel):
     state: UserState
     workout_id: int
     feedback: int
-
+    next_state: Optional[dict] = None
 # Proses Rekomendasi
 @app.post("/rekomendasi")
 def rekomendasi_workout(state: UserState):
@@ -38,19 +36,17 @@ def rekomendasi_workout(state: UserState):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 # Proses Feedback
 @app.post("/feedback")
 def kirim_feedback(data: FeedbackInput):
     print("Feedback diterima:")
     print(data.dict())
     try:
+        next_state = data.next_state or data.state.dict()
         print("Feedback diterima:", data.dict()) 
-        result = update_q_value(data.state.dict(), data.workout_id, data.feedback)
+        result = update_q_value(data.state.dict(), data.workout_id, data.feedback, next_state)
         print("Q-value berhasil diupdate.") 
         return {"success": result}
     except Exception as e:
         print("Error update Q-value:", e) 
         raise HTTPException(status_code=500, detail=str(e))
-
-
