@@ -323,17 +323,17 @@
                                     <div class="modal-body text-center">
                                         <p class="mb-3">Bagaimana workout yang telah direkomendasikan?</p>
                                         <div class="d-flex justify-content-center gap-3">
-                                            <input type="radio" class="btn-check" name="feedback" id="feedbackPas" value="2" required>
+                                            <input type="radio" class="btn-check" name="feedback" id="feedbackPas" value="5" required>
                                             <label class="btn btn-success flex-fill d-flex justify-content-center align-items-center py-3" for="feedbackPas">
                                                 Pas
                                             </label>
 
-                                            <input type="radio" class="btn-check" name="feedback" id="feedbackRingan" value="-1" required>
+                                            <input type="radio" class="btn-check" name="feedback" id="feedbackRingan" value="2" required>
                                             <label class="btn btn-warning flex-fill d-flex justify-content-center align-items-center text-dark py-3" for="feedbackRingan">
                                                 Terlalu Ringan
                                             </label>
 
-                                            <input type="radio" class="btn-check" name="feedback" id="feedbackBerat" value="-2" required>
+                                            <input type="radio" class="btn-check" name="feedback" id="feedbackBerat" value="-5" required>
                                             <label class="btn btn-danger flex-fill d-flex justify-content-center align-items-center py-3" for="feedbackBerat">
                                                 Terlalu Berat
                                             </label>

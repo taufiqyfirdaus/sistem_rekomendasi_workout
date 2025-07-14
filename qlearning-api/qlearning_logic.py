@@ -200,7 +200,7 @@ def get_rekomendasi(state, user_id):
     return rekomendasi["workout_id"], strategi
 # Proses update q-value yang ada di Q-Table
 def update_q_value(state: dict, workout_id: int, reward: int, next_state: dict):
-    alpha = 0.1
+    alpha = 0.3
     gamma = 0.8
 
     db = get_db_connection()

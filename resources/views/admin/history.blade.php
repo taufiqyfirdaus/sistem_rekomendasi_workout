@@ -33,11 +33,11 @@
                                     <td>{{ $history->mood }}</td>
                                     <td>{{ $history->strategi ?? '-' }}</td>
                                     <td>
-                                        @if ($history->feedback === 2)
+                                        @if ($history->feedback === 5)
                                             Pas
-                                        @elseif ($history->feedback === -1)
+                                        @elseif ($history->feedback === 2)
                                             Terlalu Ringan
-                                        @elseif ($history->feedback === -2)
+                                        @elseif ($history->feedback === -5)
                                             Terlalu Berat
                                         @else
                                             -
