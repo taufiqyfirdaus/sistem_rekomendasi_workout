@@ -210,8 +210,13 @@
                                         <div class="mb-3">
                                             <label class="form-label mb-0 fw-semibold">Durasi Latihan (menit)</label>
                                             <div class="form-text text-muted mt-0 mb-1" style="font-size: 10px;"><i class="bi bi-info-circle"> Waktu yang Anda siapkan untuk melakukan workout</i></div>
-                                            <input type="number" class="form-control" name="durasi" value="{{ old('durasi', $preferensi?->durasi) }}" placeholder="Masukkan durasi latihan"
-                                                required>
+                                            <select class="form-select" name="durasi" required>
+                                                <option disabled selected>Pilih Durasi Latihan</option>
+                                                @foreach (['<=30 menit', '<=60 menit', '<=120 menit'] as $durasi)
+                                                    <option value="{{ $durasi }}" {{ old('durasi', $preferensi?->durasi) === $durasi ? 'selected' : '' }}>{{ $durasi }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
                                         </div>
 
                                         <div class="mb-3">
