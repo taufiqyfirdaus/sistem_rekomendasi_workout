@@ -84,6 +84,10 @@
                                                 <label class="form-label fw-semibold">Username</label>
                                                 <input type="text" class="form-control" name="username" value="{{ Auth::user()->username }}" readonly>
                                             </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Jenis Kelamin</label>
+                                                <input type="text" class="form-control" name="jenis_kelamin" value="{{ Auth::user()->jenis_kelamin }}" readonly>
+                                            </div>
                                         @endauth
 
                                         <div class="mb-3">
