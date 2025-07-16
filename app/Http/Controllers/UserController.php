@@ -76,7 +76,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'jenis_olahraga_favorit' => 'required|string',
             'tujuan_workout' => 'required|string',
-            'durasi' => 'required|numeric|min:1',
+            'durasi' => 'required|string',
             'alat' => 'required|string',
         ]);
 
