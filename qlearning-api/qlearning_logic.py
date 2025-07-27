@@ -14,7 +14,7 @@ def get_db_connection():
         database=os.getenv("DB_NAME", "fitq"),
     )
 # Mengambil 5 workout terakhir dari histories agar tdk merekomendasikan wo yg sama
-def get_recent_recommended_workouts(user_id: int, limit: int = 5) -> set:
+def get_recent_recommended_workouts(user_id: int, limit: int = 3) -> set:
     db = get_db_connection()
     cursor = db.cursor()
     cursor.execute("""
@@ -48,11 +48,30 @@ def filter_by_kesehatan(workouts, kondisi_kesehatan):
     if not allowed:
         return workouts
     return [w for w in workouts if any(nama.lower() in w["nama_workout"].lower() for nama in allowed)]
+# Filter untuk tujuan workout
+def filter_by_tujuan(workouts, tujuan):
+    if tujuan == "Menurunkan Berat Badan":
+        # Fokus pada kardio, HIIT, dan dance fitness
+        return [w for w in workouts if w["kategori"] in ["Kardio", "HIIT", "Dance Fitness"]]
+    elif tujuan == "Meningkatkan Massa Otot & Kekuatan":
+        # Fokus pada kekuatan dan bodyweight training
+        return [w for w in workouts if w["kategori"] in ["Kekuatan", "Bodyweight Training"]]
+    elif tujuan == "Meningkatkan Kebugaran Kardiovaskular":
+        # Fokus hanya pada kardio
+        return [w for w in workouts if w["kategori"] == "Kardio"]
+    elif tujuan == "Meningkatkan Fleksibilitas":
+        # Fokus hanya pada fleksibilitas (yoga, stretching, tai chi)
+        return [w for w in workouts if w["kategori"] == "Fleksibilitas"]
+    elif tujuan == "Relaksasi":
+        # Relaksasi → nama workout yang menenangkan
+        return [w for w in workouts if w["nama_workout"] in ["Stretching", "Yoga 30 menit", "Tai Chi"] or "Yoga" in w["nama_workout"]]
+    else:
+        return workouts
 # Filter untuk kelengkapan alat
 def filter_by_alat(workouts, preferensi_alat):
     allowed_map = {
         "Tidak ada": ["Tidak ada"],
-        "Dasar": ["Sepatu lari", "Tali lompat", "Matras", "Sepeda"],
+        "Dasar": ["Sepatu lari", "Tali lompat", "Matras", "Sepeda", "Tidak ada"],
         "Lengkap": None
     }
     allowed = allowed_map.get(preferensi_alat)
@@ -104,8 +123,8 @@ def generate_q_table_entries_if_missing(state):
     db.commit()
     cursor.close()
     db.close()
-# Proses untuk menurunkan epsilon seiring banyaknya rekomendasi
-def calculate_epsilon(user_id):
+# Proses untuk menurunkan epsilon seiring banyaknya rekomendasi berdasarkan banyak user (TIDAK DIGUNAKAN)
+def calculate_epsilon_by_user(user_id):
     db = get_db_connection()
     cursor = db.cursor()
 
@@ -117,11 +136,46 @@ def calculate_epsilon(user_id):
 
     # Parameter epsilon decay
     epsilon_initial = 1.0
-    min_epsilon = 0.1
+    min_epsilon = 0.3
     decay_rate = 0.97
 
     epsilon = max(min_epsilon, epsilon_initial * (decay_rate ** episode))
     return epsilon
+# Proses untuk menurunkan epsilon seiring banyaknya rekomendasi berdasarkan banyak state
+def calculate_epsilon_by_state(state):
+    db = get_db_connection()
+    cursor = db.cursor()
+
+    state_values = get_state_identifier(state)
+
+    cursor.execute("""
+        SELECT COUNT(*) FROM histories
+        WHERE JSON_EXTRACT(state_snapshot, '$.usia') = %s
+          AND JSON_EXTRACT(state_snapshot, '$.jenis_kelamin') = %s
+          AND JSON_EXTRACT(state_snapshot, '$.kategori_bmi') = %s
+          AND JSON_EXTRACT(state_snapshot, '$.kondisi_kesehatan') = %s
+          AND JSON_EXTRACT(state_snapshot, '$.tingkat_kebugaran') = %s
+          AND JSON_EXTRACT(state_snapshot, '$.jenis_olahraga_favorit') = %s
+          AND JSON_EXTRACT(state_snapshot, '$.tujuan_workout') = %s
+          AND JSON_EXTRACT(state_snapshot, '$.durasi_latihan') = %s
+          AND JSON_EXTRACT(state_snapshot, '$.kelengkapan_alat') = %s
+    """, state_values)
+
+    state_count = cursor.fetchone()[0]
+
+    cursor.close()
+    db.close()
+
+    epsilon_initial = 1.0
+    min_epsilon = 0.3
+    decay_rate = 0.97
+
+    epsilon = max(min_epsilon, epsilon_initial * (decay_rate ** state_count))
+
+    print(f"Epsilon saat ini (kemunculan {state_count} kali): {epsilon:.4f}")
+
+    return epsilon
+
 
 # Proses rekomendasi mulai dari mengambil state hingga mengirimkan rekomendasi ke laravel
 def get_rekomendasi(state, user_id):
@@ -157,16 +211,33 @@ def get_rekomendasi(state, user_id):
     print(f"Jumlah setelah filter mood: {len(hasil)}")
     hasil = filter_by_kesehatan(hasil, state["kondisi_kesehatan"])
     print(f"Jumlah setelah filter kesehatan: {len(hasil)}")
+
+    # Simpan hasil awal (sebelum filter tujuan)
+    hasil_sebelum_tujuan = hasil.copy()
+
+    hasil = filter_by_tujuan(hasil, state["tujuan_workout"])
+    print(f"Jumlah setelah filter tujuan workout: {len(hasil)}")
+
     # Simpan hasil sementara sebelum filter alat
     hasil_sebelum_alat = hasil.copy()
 
     hasil = filter_by_alat(hasil, state["kelengkapan_alat"])
     print(f"Jumlah setelah filter alat: {len(hasil)}")
 
+    # Fallback jika hasil kosong
     if not hasil:
-        print("Filter alat terlalu ketat, gunakan hasil tanpa filter alat.")
+        print("Hasil kosong setelah filter alat → fallback ke sebelum filter alat.")
         hasil = hasil_sebelum_alat
         print(f"Jumlah workout setelah longgar: {len(hasil)}")
+
+    if not hasil:
+        print("Masih kosong → fallback ke hasil awal tanpa filter.")
+        hasil = hasil_sebelum_tujuan
+        print(f"Jumlah workout setelah longgar: {len(hasil)}")
+
+    if not hasil:
+        print("Semua workout terfilter. Gunakan fallback workout_id=1.")
+        return 1, "explore"
 
     # Ambil workout terakhir dari history (maks 5)
     recently_used_ids = get_recent_recommended_workouts(user_id)
@@ -183,9 +254,7 @@ def get_rekomendasi(state, user_id):
         return 1, "explore"
 
     # EPSILON GREEDY untuk algoritma memilih antara explore atau exploit
-    epsilon = calculate_epsilon(user_id)
-
-    print(f"Epsilon saat ini: {epsilon:.4f}")
+    epsilon = calculate_epsilon_by_state(state)
 
     if random.random() < epsilon:
         rekomendasi = random.choice(hasil)

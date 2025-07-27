@@ -13,7 +13,7 @@ class UserState(BaseModel):
     tingkat_kebugaran: str
     jenis_olahraga_favorit: str
     tujuan_workout: str
-    durasi_latihan: int
+    durasi_latihan: str
     kelengkapan_alat: str
     mood: str
     user_id: int
